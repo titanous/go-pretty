@@ -2,6 +2,47 @@
 
 
 [[projects]]
+  digest = "1:2b57a68d705cbcc5a6cd573e809718719746c2a7f6e2e4adef727fd04732506f"
+  name = "github.com/alecthomas/chroma"
+  packages = [
+    ".",
+    "formatters",
+    "formatters/html",
+    "lexers",
+    "lexers/a",
+    "lexers/b",
+    "lexers/c",
+    "lexers/circular",
+    "lexers/d",
+    "lexers/e",
+    "lexers/f",
+    "lexers/g",
+    "lexers/h",
+    "lexers/i",
+    "lexers/internal",
+    "lexers/j",
+    "lexers/k",
+    "lexers/l",
+    "lexers/m",
+    "lexers/n",
+    "lexers/o",
+    "lexers/p",
+    "lexers/q",
+    "lexers/r",
+    "lexers/s",
+    "lexers/t",
+    "lexers/v",
+    "lexers/w",
+    "lexers/x",
+    "lexers/y",
+    "quick",
+    "styles",
+  ]
+  pruneopts = "UT"
+  revision = "be3313d5c7e126403733115d0f2bd40e896e94d8"
+  version = "v0.6.6"
+
+[[projects]]
   digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
   name = "github.com/asaskevich/govalidator"
   packages = ["."]
@@ -10,12 +51,39 @@
   version = "v9"
 
 [[projects]]
+  branch = "master"
+  digest = "1:710109527a119c813d4fac773712dd92f449ed7c2f7b81f49822f94d290c8f72"
+  name = "github.com/danwakefield/fnmatch"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cbb64ac3d964b81592e64f957ad53df015803288"
+
+[[projects]]
   digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  digest = "1:26d73f0911e537e89d04011f7a65a5cd2d28113d551d4366480b4706b2833e3a"
+  name = "github.com/dlclark/regexp2"
+  packages = [
+    ".",
+    "syntax",
+  ]
+  pruneopts = "UT"
+  revision = "92c702aa5812963ef9193a9624191932d44073d7"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:393d3174f4ccedc04106eba06de014b33fde7716fd562cb0611e5fae64fe7695"
+  name = "github.com/eiannone/keyboard"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7169d0afeb4fed19d59b9c3478b0d6692e0c2668"
 
 [[projects]]
   branch = "master"
@@ -73,6 +141,14 @@
   version = "v1.1.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:f70e9460c913251190917efb3e565f01b13cd190dc1aabe7a83f7b0a260fb54f"
+  name = "github.com/nsf/termbox-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "eeb6cd0a176293eeb2c69270d83835972e3567bc"
+
+[[projects]]
   digest = "1:cfa0d7741863a0e1d30e0ccdd4b48a96a471cdb47892303de8b92c3713af3e77"
   name = "github.com/pkg/profile"
   packages = ["."]
@@ -98,9 +174,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0e22b636435114add60ec3317a54eb909cea4acf2eef1ddd1d11225eac06acd4"
+  digest = "1:2f71657f09ff05e4567909e9e0de7ad799828c96d402c540b41dc044a6590fb2"
   name = "golang.org/x/sys"
-  packages = ["windows"]
+  packages = [
+    "unix",
+    "windows",
+  ]
   pruneopts = "UT"
   revision = "1c9583448a9c3aa0f9a6a5241bf73c0bd8aafded"
 
@@ -108,8 +187,11 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/alecthomas/chroma/quick",
+    "github.com/eiannone/keyboard",
     "github.com/go-openapi/strfmt",
     "github.com/mattn/go-runewidth",
+    "github.com/nsf/termbox-go",
     "github.com/pkg/profile",
     "github.com/stretchr/testify/assert",
     "golang.org/x/sys/windows",

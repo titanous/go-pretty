@@ -13,13 +13,20 @@ bench:
 	go test -bench=. -benchmem
 
 cyclo:
-	gocyclo -over 13 ./*/*.go
+	gocyclo -over 13 ./list/*.go
+	gocyclo -over 13 ./table/*.go
+	gocyclo -over 13 ./progress/*.go
+	#gocyclo -over 13 ./prompt/*.go
+	gocyclo -over 13 ./text/*.go
 
 demo-list:
 	go run cmd/demo-list/demo.go
 
 demo-progress:
 	go run cmd/demo-progress/demo.go
+
+demo-prompt:
+	go run cmd/demo-prompt/demo.go
 
 demo-table:
 	go run cmd/demo-table/demo.go

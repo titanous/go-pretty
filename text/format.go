@@ -2,7 +2,7 @@ package text
 
 import "strings"
 
-// Format denotes the "case" to use for text.
+// Format denotes the "format" to use for text.
 type Format int
 
 // Format enumerations
