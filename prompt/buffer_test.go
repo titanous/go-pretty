@@ -171,16 +171,28 @@ func TestBuffer_DeleteWordBackward(t *testing.T) {
 	assert.Equal(t, []string{"abc", ""}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 1, Col: 0}, b.position)
 	b.DeleteWordBackward()
+	assert.Equal(t, []string{"abc"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 0, Col: 3}, b.position)
+
+	b.lines = []string{"abc", "def", "ghi"}
+	b.position = cursorPosition{Line: 2, Col: 3}
+	b.DeleteWordBackward()
+	assert.Equal(t, []string{"abc", "def", ""}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 0}, b.position)
+	b.DeleteWordBackward()
+	assert.Equal(t, []string{"abc", "def"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 1, Col: 3}, b.position)
+	b.DeleteWordBackward()
 	assert.Equal(t, []string{"abc", ""}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 1, Col: 0}, b.position)
-
-	b.lines = []string{"abc", "def"}
-	b.position = cursorPosition{Line: 0, Col: 3}
 	b.DeleteWordBackward()
-	assert.Equal(t, []string{"", "def"}, b.lines)
+	assert.Equal(t, []string{"abc"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 0, Col: 3}, b.position)
+	b.DeleteWordBackward()
+	assert.Equal(t, []string{""}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 	b.DeleteWordBackward()
-	assert.Equal(t, []string{"", "def"}, b.lines)
+	assert.Equal(t, []string{""}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 }
 
@@ -214,16 +226,28 @@ func TestBuffer_DeleteWordForward(t *testing.T) {
 	assert.Equal(t, []string{"ab", "def"}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 0, Col: 2}, b.position)
 	b.DeleteWordForward()
-	assert.Equal(t, []string{"ab", "def"}, b.lines)
+	assert.Equal(t, []string{"abdef"}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 0, Col: 2}, b.position)
 
-	b.lines = []string{"abc", "def"}
+	b.lines = []string{"abc", "def", "ghi"}
 	b.position = cursorPosition{Line: 0, Col: 0}
 	b.DeleteWordForward()
-	assert.Equal(t, []string{"", "def"}, b.lines)
+	assert.Equal(t, []string{"", "def", "ghi"}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 	b.DeleteWordForward()
-	assert.Equal(t, []string{"", "def"}, b.lines)
+	assert.Equal(t, []string{"def", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
+	b.DeleteWordForward()
+	assert.Equal(t, []string{"", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
+	b.DeleteWordForward()
+	assert.Equal(t, []string{"ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
+	b.DeleteWordForward()
+	assert.Equal(t, []string{""}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
+	b.DeleteWordForward()
+	assert.Equal(t, []string{""}, b.lines)
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 }
 
@@ -335,6 +359,60 @@ func TestBuffer_Length(t *testing.T) {
 
 	b.lines = []string{"abc", "def"}
 	assert.Equal(t, 7, b.Length())
+}
+
+func TestBuffer_MakeWordCapitalCase(t *testing.T) {
+	b := getNewBuffer(t)
+	b.lines = []string{"abc", "def", "ghi"}
+	b.position = cursorPosition{Line: 0, Col: 0}
+
+	b.MakeWordCapitalCase()
+	assert.Equal(t, []string{"Abc", "def", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 1, Col: 0}, b.position)
+	b.position.Col = 1
+	b.MakeWordCapitalCase()
+	assert.Equal(t, []string{"Abc", "Def", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 0}, b.position)
+	b.position.Col = 2
+	b.MakeWordCapitalCase()
+	assert.Equal(t, []string{"Abc", "Def", "Ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 3}, b.position)
+}
+
+func TestBuffer_MakeWordLowerCase(t *testing.T) {
+	b := getNewBuffer(t)
+	b.lines = []string{"ABC", "DEF", "GHI"}
+	b.position = cursorPosition{Line: 0, Col: 0}
+
+	b.MakeWordLowerCase()
+	assert.Equal(t, []string{"abc", "DEF", "GHI"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 1, Col: 0}, b.position)
+	b.position.Col = 1
+	b.MakeWordLowerCase()
+	assert.Equal(t, []string{"abc", "def", "GHI"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 0}, b.position)
+	b.position.Col = 2
+	b.MakeWordLowerCase()
+	assert.Equal(t, []string{"abc", "def", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 3}, b.position)
+}
+
+func TestBuffer_MakeWordUpperCase(t *testing.T) {
+	b := getNewBuffer(t)
+	b.lines = []string{"abc", "def", "ghi"}
+	b.position = cursorPosition{Line: 0, Col: 0}
+
+	b.MakeWordUpperCase()
+	assert.Equal(t, []string{"ABC", "def", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 1, Col: 0}, b.position)
+	b.position.Col = 1
+	b.MakeWordUpperCase()
+	assert.Equal(t, []string{"ABC", "DEF", "ghi"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 0}, b.position)
+	b.position.Col = 2
+	b.MakeWordUpperCase()
+	assert.Equal(t, []string{"ABC", "DEF", "GHI"}, b.lines)
+	assert.Equal(t, cursorPosition{Line: 2, Col: 3}, b.position)
 }
 
 func TestBuffer_MarkAsDone(t *testing.T) {
@@ -553,7 +631,11 @@ func TestBuffer_MoveWordLeft(t *testing.T) {
 	b.MoveWordLeft()
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 
-	b.position = cursorPosition{Line: 0, Col: 4}
+	b.position = cursorPosition{Line: 0, Col: 1}
+	b.MoveWordLeft()
+	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
+
+	b.position = cursorPosition{Line: 0, Col: 2}
 	b.MoveWordLeft()
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 
@@ -561,7 +643,7 @@ func TestBuffer_MoveWordLeft(t *testing.T) {
 	b.MoveWordLeft()
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 
-	b.position = cursorPosition{Line: 0, Col: 2}
+	b.position = cursorPosition{Line: 0, Col: 4}
 	b.MoveWordLeft()
 	assert.Equal(t, cursorPosition{Line: 0, Col: 0}, b.position)
 
@@ -631,4 +713,20 @@ func TestBuffer_String(t *testing.T) {
 
 	b.lines = []string{"abc", "def"}
 	assert.Equal(t, "abc\ndef", b.String())
+}
+
+func TestBuffer_SwapCharacterNext(t *testing.T) {
+
+}
+
+func TestBuffer_SwapCharacterPrevious(t *testing.T) {
+
+}
+
+func TestBuffer_SwapWordNext(t *testing.T) {
+
+}
+
+func TestBuffer_SwapWordPrevious(t *testing.T) {
+
 }

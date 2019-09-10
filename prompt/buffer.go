@@ -58,9 +58,11 @@ func (b *buffer) Clear() {
 }
 
 // DeleteBackward deletes n runes backwards
-func (b *buffer) DeleteBackward(n int) {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+func (b *buffer) DeleteBackward(n int, locked ...bool) {
+	if len(locked) == 0 {
+		b.mutex.Lock()
+		defer b.mutex.Unlock()
+	}
 
 	// if asked to delete till beginning, just set N to the max value possible
 	if n == -1 {
@@ -92,9 +94,11 @@ func (b *buffer) DeleteBackward(n int) {
 }
 
 // DeleteForward deletes n runes forwards
-func (b *buffer) DeleteForward(n int) {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+func (b *buffer) DeleteForward(n int, locked ...bool) {
+	if len(locked) == 0 {
+		b.mutex.Lock()
+		defer b.mutex.Unlock()
+	}
 
 	// if asked to delete till end, just set N to the max value possible
 	if n == -1 {
@@ -131,6 +135,13 @@ func (b *buffer) DeleteWordBackward() {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
+	// already on the first column? delete one char backwards...
+	if b.position.Col == 0 {
+		b.DeleteBackward(1, true)
+		return
+	}
+
+	// delete till beginning of previous word
 	foundWord := false
 	line := b.getCurrentLine()
 	for idx := b.position.Col - 1; idx >= 0; idx-- {
@@ -139,7 +150,8 @@ func (b *buffer) DeleteWordBackward() {
 			b.lines[b.position.Line] = line[:idx] + line[b.position.Col:]
 			b.position.Col = idx
 			return
-		} else if isPartOfWord {
+		}
+		if isPartOfWord {
 			foundWord = true
 		}
 	}
@@ -152,8 +164,15 @@ func (b *buffer) DeleteWordForward() {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	foundWord, foundNonWord := false, false
+	// already on the last column? delete one char forwards...
 	line := b.getCurrentLine()
+	if b.position.Col == len(line) {
+		b.DeleteForward(1, true)
+		return
+	}
+
+	// delete till beginning of previous word
+	foundWord, foundNonWord := false, false
 	for idx := b.position.Col; idx < len(line); idx++ {
 		isPartOfWord := b.isPartOfWord(line[idx])
 		if !isPartOfWord {
@@ -162,7 +181,8 @@ func (b *buffer) DeleteWordForward() {
 		if isPartOfWord && foundWord && foundNonWord {
 			b.lines[b.position.Line] = line[:b.position.Col] + line[idx:]
 			return
-		} else if isPartOfWord {
+		}
+		if isPartOfWord {
 			foundWord = true
 		}
 	}
@@ -225,6 +245,52 @@ func (b *buffer) IsDone() bool {
 // Length returns the current input length
 func (b *buffer) Length() int {
 	return len(b.String())
+}
+
+// MakeWordCapitalCase converts the current word to Capital case
+func (b *buffer) MakeWordCapitalCase() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	line := b.getCurrentLine()
+	word, idxWordStart, idxWordEnd := b.getCurrentWord(line)
+	if word == "" || idxWordStart == -1 || idxWordEnd == -1 {
+		return
+	}
+
+	word = strings.ToUpper(fmt.Sprintf("%c", word[0])) + word[1:]
+	b.lines[b.position.Line] = line[:idxWordStart] + word + line[idxWordEnd:]
+	b.MoveWordRight(true)
+}
+
+// MakeWordCapitalCase converts the current word to Lower case
+func (b *buffer) MakeWordLowerCase() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	line := b.getCurrentLine()
+	word, idxWordStart, idxWordEnd := b.getCurrentWord(line)
+	if word == "" || idxWordStart == -1 || idxWordEnd == -1 {
+		return
+	}
+
+	b.lines[b.position.Line] = line[:idxWordStart] + strings.ToLower(word) + line[idxWordEnd:]
+	b.MoveWordRight(true)
+}
+
+// MakeWordCapitalCase converts the current word to Upper case
+func (b *buffer) MakeWordUpperCase() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	line := b.getCurrentLine()
+	word, idxWordStart, idxWordEnd := b.getCurrentWord(line)
+	if word == "" || idxWordStart == -1 || idxWordEnd == -1 {
+		return
+	}
+
+	b.lines[b.position.Line] = line[:idxWordStart] + strings.ToUpper(word) + line[idxWordEnd:]
+	b.MoveWordRight(true)
 }
 
 // MarkAsDone signifies that the user input is done
@@ -335,63 +401,88 @@ func (b *buffer) MoveUp(n int) {
 }
 
 // MoveWordLeft moves the cursor left to the previous word
-func (b *buffer) MoveWordLeft() {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+func (b *buffer) MoveWordLeft(locked ...bool) {
+	if len(locked) == 0 {
+		b.mutex.Lock()
+		defer b.mutex.Unlock()
+	}
 
-	// if on the first col, move to the previous line
+	// if cursor is on the first column, move it to the previous line
 	if b.position.Col == 0 {
 		if b.position.Line == 0 {
 			return
 		}
 		b.position.Line--
-		b.position.Col = len(b.lines[b.position.Line])
+		b.position.Col = len(b.getCurrentLine())
 	}
 
-	// go back letter by letter until a break is found
-	line := b.getCurrentLine()
-	for idx := b.position.Col - 1; idx > 0; idx-- {
-		if !b.isPartOfWord(line[idx-1]) {
-			b.position.Col = idx
-			return
+	// move line by line until previous word is found
+	foundWord := false
+	idxStartingLine := b.position.Line
+	for lineIdx := b.position.Line; lineIdx >= 0; lineIdx-- {
+		b.position.Line = lineIdx
+		if lineIdx != idxStartingLine {
+			b.position.Col = len(b.getCurrentLine())
+		}
+
+		line := b.lines[lineIdx]
+		for colIdx := b.position.Col - 1; colIdx >= 0; colIdx-- {
+			b.position.Col = colIdx
+			isPartOfWord := b.isPartOfWord(line[colIdx])
+			if foundWord && (!isPartOfWord || colIdx == 0) {
+				if !isPartOfWord {
+					b.position.Col++
+				}
+				return
+			}
+			if isPartOfWord {
+				foundWord = true
+			}
 		}
 	}
-	b.position.Col = 0
 }
 
 // MoveWordRight moves the cursor right to the next word
-func (b *buffer) MoveWordRight() {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+func (b *buffer) MoveWordRight(locked ...bool) {
+	if len(locked) == 0 {
+		b.mutex.Lock()
+		defer b.mutex.Unlock()
+	}
 
-	// if on the last col, move to the next line
+	// if cursor is on the last column, move to the next line
+	foundBreak := false
+	idxStartingLine := b.position.Line
 	line := b.getCurrentLine()
 	if b.position.Col == len(line) {
+		// if already on the last line, there is nothing to do
 		if b.position.Line == len(b.lines)-1 {
 			return
-		} else if b.position.Line < len(b.lines)-1 {
-			b.position.Line++
-			b.position.Col = 0
-			return
 		}
-	}
-
-	// go forward letter by letter until a break is found
-	foundBreak := false
-	line = b.getCurrentLine()
-	for idx := b.position.Col; idx < len(line); idx++ {
-		isPartOfWord := b.isPartOfWord(line[idx])
-		if isPartOfWord && foundBreak {
-			b.position.Col = idx
-			return
-		} else if !isPartOfWord {
-			foundBreak = true
-		}
-	}
-	b.position.Col = len(line)
-	if b.position.Line < len(b.lines)-1 {
 		b.position.Line++
 		b.position.Col = 0
+		foundBreak = true
+	}
+
+	// go line by line until next word is found
+	for lineIdx := b.position.Line; lineIdx < len(b.lines); lineIdx++ {
+		b.position.Line = lineIdx
+		if lineIdx != idxStartingLine {
+			b.position.Col = 0
+		}
+
+		line := b.lines[lineIdx]
+		for colIdx := b.position.Col; colIdx < len(line); colIdx++ {
+			b.position.Col = colIdx
+			isPartOfWord := b.isPartOfWord(line[b.position.Col])
+			if isPartOfWord && foundBreak {
+				return
+			}
+			if !isPartOfWord {
+				foundBreak = true
+			}
+		}
+		b.position.Col = len(line)
+		foundBreak = true
 	}
 }
 
@@ -455,12 +546,62 @@ func (b *buffer) String() string {
 	return strings.Join(b.lines, "\n")
 }
 
+func (b *buffer) SwapCharacterNext() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+}
+
+func (b *buffer) SwapCharacterPrevious() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+}
+
+func (b *buffer) SwapWordNext() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+}
+
+func (b *buffer) SwapWordPrevious() {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+}
+
 func (b *buffer) getCurrentLine() string {
 	return b.getLine(b.position.Line)
 }
 
+func (b *buffer) getCurrentWord(line string) (string, int, int) {
+	if len(line) == 0 || b.position.Col >= len(line) || !b.isPartOfWord(line[b.position.Col]) {
+		return "", -1, -1
+	}
+
+	idxWordStart, idxWordEnd := -1, -1
+	for idx := b.position.Col; idx >= 0; idx-- {
+		if !b.isPartOfWord(line[idx]) {
+			break
+		}
+		idxWordStart = idx
+	}
+	for idx := b.position.Col; idx < len(line); idx++ {
+		if !b.isPartOfWord(line[idx]) {
+			break
+		}
+		idxWordEnd = idx
+	}
+
+	return line[idxWordStart : idxWordEnd+1], idxWordStart, idxWordEnd + 1
+}
+
 func (b *buffer) getLine(n int) string {
 	return b.lines[n]
+}
+
+func (b *buffer) isPartOfWord(r uint8) bool {
+	return !(r == ' ' || r == '\n' || r == '\t' || r == ';' || r == '.' || r == ',')
 }
 
 func (b *buffer) renderCursor(out *strings.Builder, lines []string) {
@@ -530,11 +671,4 @@ func (b *buffer) stylizeUserInput() string {
 	out := outBuilder.String()
 	b.syntaxHighlighterCache[in] = out
 	return out
-}
-
-func (b *buffer) isPartOfWord(r uint8) bool {
-	return (r >= 'a' && r <= 'z') ||
-		(r >= 'A' && r <= 'Z') ||
-		(r >= '0' && r <= '9') ||
-		(r == '_') || (r == '-')
 }

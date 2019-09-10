@@ -2,6 +2,8 @@ package prompt
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 )
 
 // KeyMap can be used to customize or define the behavior of the Prompt for each
@@ -25,6 +27,9 @@ type InsertKeyMap struct {
 	EraseToEndOfLine       KeySequences
 	HistoryDown            KeySequences
 	HistoryUp              KeySequences
+	MakeWordCapitalCase    KeySequences
+	MakeWordLowerCase      KeySequences
+	MakeWordUpperCase      KeySequences
 	MoveDownOneLine        KeySequences
 	MoveLeftOneCharacter   KeySequences
 	MoveRightOneCharacter  KeySequences
@@ -35,6 +40,10 @@ type InsertKeyMap struct {
 	MoveToWordNext         KeySequences
 	MoveToWordPrevious     KeySequences
 	MoveUpOneLine          KeySequences
+	SwapCharacterNext      KeySequences
+	SwapCharacterPrevious  KeySequences
+	SwapWordNext           KeySequences
+	SwapWordPrevious       KeySequences
 	Terminate              KeySequences
 }
 
@@ -55,18 +64,22 @@ type keyMapReversed struct {
 
 var (
 	// DefaultKeyMap that defines sane key sequences for each supported action.
+	// Quite a few of these are the default short-cuts in BASH.
 	DefaultKeyMap = KeyMap{
 		Insert: InsertKeyMap{
 			Abort:                  KeySequences{CtrlC, CtrlD},
 			DeleteCharCurrent:      KeySequences{Delete},
-			DeleteCharPrevious:     KeySequences{Backspace},
-			DeleteWordNext:         KeySequences{AltD},  // bash default
-			DeleteWordPrevious:     KeySequences{CtrlW}, // bash default
+			DeleteCharPrevious:     KeySequences{Backspace, CtrlH},
+			DeleteWordNext:         KeySequences{AltD},
+			DeleteWordPrevious:     KeySequences{CtrlW},
 			EraseEverything:        KeySequences{AltW},
-			EraseToBeginningOfLine: KeySequences{CtrlU}, // bash default
-			EraseToEndOfLine:       KeySequences{CtrlK}, // bash default
+			EraseToBeginningOfLine: KeySequences{CtrlU},
+			EraseToEndOfLine:       KeySequences{CtrlK},
 			HistoryDown:            KeySequences{CtrlArrowDown},
 			HistoryUp:              KeySequences{CtrlArrowUp},
+			MakeWordCapitalCase:    KeySequences{AltC},
+			MakeWordLowerCase:      KeySequences{AltL},
+			MakeWordUpperCase:      KeySequences{AltU},
 			MoveDownOneLine:        KeySequences{ArrowDown},
 			MoveLeftOneCharacter:   KeySequences{ArrowLeft},
 			MoveRightOneCharacter:  KeySequences{ArrowRight},
@@ -74,16 +87,20 @@ var (
 			MoveToBeginningOfLine:  KeySequences{Home},
 			MoveToEnd:              KeySequences{CtrlEnd},
 			MoveToEndOfLine:        KeySequences{End},
-			MoveToWordNext:         KeySequences{CtrlArrowRight, AltF}, // bash default
-			MoveToWordPrevious:     KeySequences{CtrlArrowLeft, AltB},  // bash default
+			MoveToWordNext:         KeySequences{CtrlArrowRight, AltF},
+			MoveToWordPrevious:     KeySequences{CtrlArrowLeft, AltB},
 			MoveUpOneLine:          KeySequences{ArrowUp},
-			Terminate:              KeySequences{Enter},
+			SwapCharacterNext:      KeySequences{CtrlN},
+			SwapCharacterPrevious:  KeySequences{CtrlT},
+			SwapWordNext:           KeySequences{AltN},
+			SwapWordPrevious:       KeySequences{AltT},
+			Terminate:              KeySequences{Enter, CtrlM},
 		},
 		AutoComplete: AutoCompleteKeyMap{
 			ChooseNext:     KeySequences{ArrowDown},
 			ChoosePrevious: KeySequences{ArrowUp},
-			Hide:           KeySequences{Space},
-			Select:         KeySequences{Tab},
+			Hide:           KeySequences{Escape},
+			Select:         KeySequences{Tab, CtrlI},
 		},
 	}
 )
@@ -105,6 +122,9 @@ func (k *KeyMap) reverse() (*keyMapReversed, error) {
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.EraseToEndOfLine, EraseToEndOfLine)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.HistoryDown, HistoryDown)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.HistoryUp, HistoryUp)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.MakeWordCapitalCase, MakeWordCapitalCase)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.MakeWordLowerCase, MakeWordLowerCase)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.MakeWordUpperCase, MakeWordUpperCase)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.MoveDownOneLine, MoveDownOneLine)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.MoveLeftOneCharacter, MoveLeftOneCharacter)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.MoveRightOneCharacter, MoveRightOneCharacter)
@@ -115,13 +135,22 @@ func (k *KeyMap) reverse() (*keyMapReversed, error) {
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.MoveToWordNext, MoveToWordNext)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.MoveToWordPrevious, MoveToWordPrevious)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.MoveUpOneLine, MoveUpOneLine)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.SwapCharacterNext, SwapCharacterNext)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.SwapCharacterPrevious, SwapCharacterPrevious)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.SwapWordNext, SwapWordNext)
+	k.reverseAddKeySequences(rsp.Insert, k.Insert.SwapWordPrevious, SwapWordPrevious)
 	k.reverseAddKeySequences(rsp.Insert, k.Insert.Terminate, Terminate)
 	k.reverseAddKeySequences(rsp.AutoComplete, k.AutoComplete.ChooseNext, AutoCompleteChooseNext)
 	k.reverseAddKeySequences(rsp.AutoComplete, k.AutoComplete.ChoosePrevious, AutoCompleteChoosePrevious)
 	k.reverseAddKeySequences(rsp.AutoComplete, k.AutoComplete.Hide, AutoCompleteHide)
 	k.reverseAddKeySequences(rsp.AutoComplete, k.AutoComplete.Select, AutoCompleteSelect)
 	if len(k.errors) > 0 {
-		return nil, fmt.Errorf("key-map has errors: %#v", k.errors)
+		errStrs := make([]string, len(k.errors))
+		for idx, err := range k.errors {
+			errStrs[idx] = fmt.Sprintf("- %v", err.Error())
+		}
+		sort.Strings(errStrs)
+		return nil, fmt.Errorf("key-map has errors:\n%v", strings.Join(errStrs, "\n"))
 	}
 
 	return rsp, nil

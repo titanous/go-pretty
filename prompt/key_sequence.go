@@ -76,15 +76,12 @@ const (
 	Delete         KeySequence = "Delete"
 	End            KeySequence = "End"
 	Enter          KeySequence = "Enter"
+	Escape         KeySequence = "Escape"
 	Home           KeySequence = "Home"
 	PageDown       KeySequence = "PageDown"
 	PageUp         KeySequence = "PageUp"
 	Space          KeySequence = "Space"
 	Tab            KeySequence = "Tab"
-
-	// following key sequences are not supported externally and are here only
-	// for internal handling
-	escape KeySequence = "escape"
 )
 
 var (
@@ -123,7 +120,7 @@ var (
 		termbox.KeyDelete:     Delete,
 		termbox.KeyEnter:      Enter, // same as termbox.KeyCtrlM
 		termbox.KeyEnd:        End,
-		termbox.KeyEsc:        escape,
+		termbox.KeyEsc:        Escape,
 		termbox.KeyHome:       Home,
 		termbox.KeyPgdn:       PageDown,
 		termbox.KeyPgup:       PageUp,
@@ -131,7 +128,7 @@ var (
 		termbox.KeyTab:        Tab, // same as termbox.KeyCtrlI
 	}
 
-	// termboxEscKeySequenceMap maps all supported termbox detected escape
+	// termboxEscKeySequenceMap maps all supported termbox detected Escape
 	// Sequences to an equivalent KeySequence object. This may not work on all
 	// OSes/terminals and needs further research/work.
 	termboxEscKeySequenceMap = map[string]KeySequence{

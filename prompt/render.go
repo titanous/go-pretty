@@ -10,6 +10,14 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+// Constants
+const (
+	// EscapeSequenceDelay defines the time to wait after receiving an Esc code
+	// "/x1b" before treating it as an Escape key-hit instead of waiting for a
+	// special sequence like "/x1b[1;5A"
+	EscapeSequenceDelay = time.Millisecond * 10
+)
+
 // Errors returned by Render
 var (
 	ErrAbort = errors.New("abort")
@@ -155,8 +163,18 @@ func (p *prompt) handleKeySequence(buffer *buffer, chErrors chan error, ch rune,
 	switch action {
 	case None:
 		switch key {
-		case escape:
+		case Escape:
 			p.escapeSeq = "\x1b"
+			// Escape key press can result in just a \x1b with nothing following
+			// it; a hacky way of handling it is to wait for a few milliseconds
+			// and if no trailing characters are found, reset the escapeSeq and
+			// treat it as an Escape KeySequence
+			go func() {
+				time.Sleep(EscapeSequenceDelay)
+				if p.escapeSeq == "\x1b" {
+					p.escapeSeq = ""
+				}
+			}()
 		case Space:
 			buffer.Insert(' ')
 		case Tab:
@@ -183,6 +201,12 @@ func (p *prompt) handleKeySequence(buffer *buffer, chErrors chan error, ch rune,
 		buffer.Set(p.getHistoryItem(1))
 	case HistoryUp:
 		buffer.Set(p.getHistoryItem(-1))
+	case MakeWordCapitalCase:
+		buffer.MakeWordCapitalCase()
+	case MakeWordLowerCase:
+		buffer.MakeWordLowerCase()
+	case MakeWordUpperCase:
+		buffer.MakeWordUpperCase()
 	case MoveDownOneLine:
 		buffer.MoveDown(1)
 	case MoveLeftOneCharacter:

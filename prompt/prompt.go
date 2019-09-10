@@ -23,7 +23,7 @@ type prompt struct {
 	doNotUseTermbox bool
 	// done is the channel used to send the termination signal for the renderers
 	done chan bool
-	// escapeSeq stores the current escape sequence being handled (ex.: \x1b[1;5D)
+	// escapeSeq stores the current Escape sequence being handled (ex.: \x1b[1;5D)
 	escapeSeq string
 	// maxHeight defines the maximum height of the terminal
 	maxHeight int
@@ -157,10 +157,9 @@ func (p *prompt) getHistoryItem(delta int) string {
 	}
 
 	if p.historyIdx >= 0 && p.historyIdx < len(p.history) {
-		//fmt.Printf("\n<< %#v: %#v", p.historyIdx, p.history[p.historyIdx])
+		p.debugLog("getHistoryItem: idx=%v, value=%#v", p.historyIdx, p.history[p.historyIdx])
 		return p.history[p.historyIdx]
 	}
-	//fmt.Printf("\n<< %#v: %#v", p.historyIdx, "n/a")
 	return ""
 }
 
