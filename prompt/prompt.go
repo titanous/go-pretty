@@ -142,9 +142,9 @@ func (p *prompt) cleanup() {
 
 func (p *prompt) debugLog(msg string, a ...interface{}) {
 	if p.debugLogFile != nil {
-		msg = fmt.Sprintf(msg, a...)
-		_, _ = p.debugLogFile.WriteString(fmt.Sprintf("[%s] %s\n", time.Now().Format(time.RFC3339), msg))
-		_ = p.debugLogFile.Sync()
+		_, _ = p.debugLogFile.WriteString(
+			fmt.Sprintf("[%s] %s\n", time.Now().Format(time.RFC3339), fmt.Sprintf(msg, a...)),
+		)
 	}
 }
 
@@ -181,6 +181,12 @@ func (p *prompt) initForRender() (err error) {
 	// debugging
 	if p.debug {
 		p.debugLogFile, _ = os.Create("prompt.log")
+		go func() {
+			for ; p.debugLogFile != nil; {
+				time.Sleep(time.Millisecond * 100)
+				_ = p.debugLogFile.Sync()
+			}
+		}()
 	}
 
 	return nil
