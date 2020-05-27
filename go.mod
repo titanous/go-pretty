@@ -1,6 +1,6 @@
-module github.com/jedib0t/go-pretty/v6
+module github.com/titanous/go-pretty/v6
 
-go 1.13
+go 1.14
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

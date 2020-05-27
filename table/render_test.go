@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/stretchr/testify/assert"
+	"github.com/titanous/go-pretty/v6/text"
 )
 
 func generateColumnConfigsWithHiddenColumns(colsToHide []int) []ColumnConfig {
